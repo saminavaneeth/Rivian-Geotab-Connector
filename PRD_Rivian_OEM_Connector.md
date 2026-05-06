@@ -18,7 +18,7 @@ This PRD proposes a native OEM Connector that ingests Rivian vehicle telematics 
 
 **Why Rivian, why now:**
 
-Rivian is the largest commercial EV fleet brand not yet connected to Geotab's OEM network. Amazon — an existing Geotab enterprise customer — operates 70,000+ Rivian EDV delivery vans on the same routes as their Geotab-managed vehicles. The Rivian connector closes that gap for Amazon and positions Geotab to capture a fast-growing segment of commercial EV fleets.
+Rivian has a documented OEM integration dataset in Geotab, but current coverage is limited and does not provide the same native, mixed-fleet MyGeotab experience as other OEM connectors. Amazon — an existing Geotab enterprise customer — operates 70,000+ Rivian EDV delivery vans on the same routes as their Geotab-managed vehicles. The Rivian connector closes that gap for Amazon and positions Geotab to capture a fast-growing segment of commercial EV fleets.
 
 **Expected impact:** 5,000+ Rivian VINs managed in MyGeotab within 12 months of GA launch.
 
@@ -75,10 +75,10 @@ Geotab manages 4.6M+ connected vehicles across 55,000 fleet customers. An estima
 | GM (BrightDrop EV600) | Yes | Commercial EV fleet |
 | Stellantis (Ram ProMaster EV) | Yes | Delivery fleet competitor |
 | Mercedes eSprinter | Yes | Direct competitor to Rivian EDV |
-| **Rivian (R1T, R1S, EDV)** | **No** | This PRD |
+| **Rivian (R1T, R1S, EDV)** | **Yes (OEM dataset documented)** | Existing OEM integration dataset is available, but a full native connector would deliver deeper MyGeotab mixed-fleet support |
 | Canoo | No | Smaller fleet, lower priority |
 
-Rivian is the only significant commercial EV platform missing from Geotab's OEM network. Its absence is increasingly visible in enterprise sales conversations.
+Rivian has a documented OEM dataset in Geotab, but it is still an important gap for full native MyGeotab mixed-fleet visibility and operations. Its absence in the broader native connector portfolio is increasingly visible in enterprise sales conversations.
 
 ### 2.4 Strategic Rationale
 
