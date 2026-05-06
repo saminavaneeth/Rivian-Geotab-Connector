@@ -7,7 +7,7 @@
 
 ## What this application is
 
-A working simulation of a Geotab OEM Connector for Rivian vehicles. It demonstrates the full data pipeline — from raw Rivian vehicle telemetry, through a normalization engine, into Geotab's standard data models — and surfaces the result as a dispatcher-facing fleet dashboard.
+A working simulation of a Geotab OEM Connector for Rivian vehicles. It demonstrates the full data pipeline — from raw Rivian vehicle telemetry, through a [normalization engine](#how-the-data-transformation-works), into Geotab's standard data models — and surfaces the result as a dispatcher-facing fleet dashboard.
 
 The application has two parts:
 - **Backend (Python / FastAPI):** Simulates Rivian's Vehicle API, runs the normalization engine, and exposes REST endpoints
