@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rivian × Geotab OEM Connector</title>
+<title>Rivian × Geotab OEM Connector — Enhanced</title>
 <style>
   :root {
     --bg:        #0f1117;
@@ -14,6 +14,7 @@
     --geotab:    #0073e6;
     --warn:      #f59e0b;
     --danger:    #ef4444;
+    --critical:  #dc2626;
     --text:      #e2e8f0;
     --muted:     #64748b;
     --radius:    10px;
@@ -25,11 +26,13 @@
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
+    font-size: 13px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
-  /* ── Header ── */
   header {
     display: flex;
     align-items: center;
@@ -63,28 +66,11 @@
     50% { opacity: .7; transform: scale(1.1); box-shadow: 0 0 0 5px rgba(0,166,81,0); }
   }
 
-  .header-meta { margin-left: auto; color: var(--muted); font-size: 12px; }
-  .header-meta span { margin-left: 16px; }
+  .header-meta { margin-left: auto; color: var(--muted); font-size: 11px; display: flex; gap: 16px; align-items: center; }
+  .dig-status { padding: 4px 10px; background: rgba(0,115,230,.1); border-radius: 6px; color: var(--geotab); font-size: 10px; }
 
-  /* ── Fault banner ── */
-  #fault-banner {
-    display: none;
-    background: rgba(239,68,68,.12);
-    border-bottom: 1px solid rgba(239,68,68,.3);
-    padding: 10px 24px;
-    font-size: 13px;
-    color: #fca5a5;
-    gap: 8px;
-    align-items: center;
-  }
+  main { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; }
 
-  #fault-banner.visible { display: flex; }
-  #fault-banner strong { color: var(--danger); }
-
-  /* ── Main layout ── */
-  main { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
-
-  /* ── KPI cards ── */
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
   .kpi {
@@ -94,284 +80,241 @@
     padding: 16px 20px;
   }
 
-  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
-  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+  .kpi-value { font-size: 24px; font-weight: 700; line-height: 1; }
   .kpi-value.green  { color: var(--rivian); }
   .kpi-value.blue   { color: var(--geotab); }
-  .kpi-value.yellow { color: var(--warn); }
-  .kpi-value.red    { color: var(--danger); }
-  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .kpi-value.warn   { color: var(--warn); }
+  .kpi-value.danger { color: var(--danger); }
 
-  /* ── Vehicle grid ── */
-  .section-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .8px;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
+  .kpi-sub { font-size: 10px; color: var(--muted); margin-top: 4px; }
 
-  .vehicle-grid {
+  .section {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 12px;
-  }
-
-  .vehicle-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .vehicle-card:hover { border-color: var(--geotab); background: var(--surface2); }
-  .vehicle-card.selected { border-color: var(--geotab); background: var(--surface2); }
-  .vehicle-card.selected::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--geotab);
-  }
-
-  .vehicle-card.has-fault { border-color: rgba(239,68,68,.5); }
-  .vehicle-card.has-fault::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--danger);
-    animation: fault-blink 1s infinite;
-  }
-
-  @keyframes fault-blink {
-    0%, 100% { opacity: 1; } 50% { opacity: .2; }
-  }
-
-  .card-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-type { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
-
-  /* Battery bar */
-  .batt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .batt-pct { font-size: 18px; font-weight: 700; width: 44px; flex-shrink: 0; }
-  .batt-bar-wrap {
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
     flex: 1;
-    height: 8px;
-    background: var(--surface2);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .batt-bar {
-    height: 100%;
-    border-radius: 4px;
-    transition: width .6s ease;
+    min-height: 0;
   }
 
-  .card-stats { display: flex; gap: 10px; margin-top: 10px; }
-  .stat { flex: 1; }
-  .stat-label { font-size: 10px; color: var(--muted); }
-  .stat-value { font-size: 13px; font-weight: 600; }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 20px;
-    margin-top: 10px;
-  }
-
-  .badge-driving  { background: rgba(0,166,81,.15);  color: var(--rivian); }
-  .badge-charging { background: rgba(0,115,230,.15); color: var(--geotab); }
-  .badge-parked   { background: rgba(100,116,139,.15); color: var(--muted); }
-  .badge-fault    { background: rgba(239,68,68,.15); color: var(--danger); animation: fault-blink 1s infinite; }
-
-  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
-  /* ── Data pipeline panel ── */
-  .pipeline-panel {
+  .panel {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
-  }
-
-  .pipeline-header {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface2);
+    flex-direction: column;
   }
 
-  .pipeline-header h3 { font-size: 13px; font-weight: 600; }
+  .panel-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 12px;
+  }
 
-  .pipeline-header select {
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--border);
+  .panel-body {
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  .fault-score-item {
+    padding: 10px 12px;
+    background: rgba(255,255,255,.02);
     border-radius: 6px;
-    padding: 5px 10px;
+    margin-bottom: 8px;
+    border-left: 3px solid;
     font-size: 12px;
     cursor: pointer;
+    transition: background 0.15s;
   }
 
-  .pipeline-arrow {
-    margin-left: auto;
-    font-size: 12px;
-    color: var(--muted);
+  .fault-score-item:hover { background: rgba(255,255,255,.06); }
+
+  .fault-score-item.selected {
+    background: rgba(0,115,230,.1);
+    border-left-width: 4px;
+    outline: 1px solid rgba(0,115,230,.3);
+  }
+
+  .maintenance-context-bar {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(0,115,230,.08);
+    border-bottom: 1px solid rgba(0,115,230,.2);
+    font-size: 11px;
+    color: var(--geotab);
   }
 
-  .arrow-label {
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 11px;
+  .maintenance-context-bar button {
+    padding: 3px 8px;
+    font-size: 10px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .severity-critical { border-left-color: var(--critical); }
+  .severity-high     { border-left-color: var(--danger); }
+  .severity-medium   { border-left-color: var(--warn); }
+  .severity-low      { border-left-color: var(--geotab); }
+
+  .fault-score-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .fault-score-name { font-weight: 500; }
+  .fault-score-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
     font-weight: 600;
   }
 
-  .arrow-label.rivian { background: rgba(0,166,81,.15); color: var(--rivian); }
-  .arrow-label.geotab { background: rgba(0,115,230,.15); color: var(--geotab); }
+  .badge-critical { background: rgba(220,38,38,.2); color: var(--critical); }
+  .badge-high     { background: rgba(239,68,68,.2); color: var(--danger); }
+  .badge-medium   { background: rgba(245,158,11,.2); color: var(--warn); }
+  .badge-low      { background: rgba(0,115,230,.2); color: var(--geotab); }
 
-  .pipeline-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .fault-score-score { color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+  .fault-dismiss-btn {
+    padding: 2px 8px;
+    font-size: 10px;
+    background: rgba(239,68,68,.12);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68,.3);
+    border-radius: 4px;
+    margin-left: 6px;
+    flex-shrink: 0;
   }
+  .fault-dismiss-btn:hover { background: rgba(239,68,68,.28); opacity: 1; }
 
-  .pipeline-col {
-    padding: 16px 20px;
-  }
-
-  .pipeline-col:first-child {
-    border-right: 1px solid var(--border);
-  }
-
-  .col-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .6px;
+  .maintenance-suggestion {
+    padding: 12px;
+    border-left: 3px solid;
+    border-radius: 6px;
     margin-bottom: 10px;
   }
 
-  .col-title.rivian { color: var(--rivian); }
-  .col-title.geotab { color: var(--geotab); }
+  .maintenance-critical { background: rgba(220,38,38,.12);  border-left-color: var(--critical); border-left-width: 4px; }
+  .maintenance-high     { background: rgba(239,68,68,.08);  border-left-color: var(--danger); }
+  .maintenance-medium   { background: rgba(245,158,11,.08); border-left-color: var(--warn); }
+  .maintenance-low      { background: rgba(0,166,81,.08);   border-left-color: var(--rivian); }
 
-  pre.json-view {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 14px;
-    font-size: 12px;
-    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
-    line-height: 1.6;
-    overflow: auto;
-    max-height: 340px;
-    white-space: pre;
+  .maintenance-title-critical { font-weight: 700; color: var(--critical); margin-bottom: 4px; }
+  .maintenance-title-high     { font-weight: 600; color: var(--danger);   margin-bottom: 4px; }
+  .maintenance-title-medium   { font-weight: 600; color: var(--warn);     margin-bottom: 4px; }
+  .maintenance-title-low      { font-weight: 600; color: var(--rivian);   margin-bottom: 4px; }
+  .maintenance-detail { font-size: 12px; color: var(--text); margin-bottom: 4px; }
+  .maintenance-parts {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,.1);
   }
 
-  .json-key    { color: #7dd3fc; }
-  .json-str    { color: #86efac; }
-  .json-num    { color: #fbbf24; }
-  .json-bool   { color: #c084fc; }
-  .json-null   { color: var(--muted); }
-  .json-brace  { color: var(--muted); }
+  button {
+    padding: 8px 12px;
+    background: var(--geotab);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
 
-  .pipeline-hint {
-    padding: 40px;
+  button:hover { opacity: 0.85; }
+  button.secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+  .dig-panel {
+    background: rgba(0,115,230,.05);
+    border: 1px solid rgba(0,115,230,.2);
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 11px;
+  }
+
+  .dig-field {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0,115,230,.1);
+  }
+
+  .dig-field:last-child { border-bottom: none; }
+
+  .dig-field-label { color: var(--muted); }
+  .dig-field-value { color: var(--geotab); font-weight: 500; }
+
+  .empty-state {
     text-align: center;
     color: var(--muted);
-    font-size: 13px;
-  }
-
-  /* ── Responsive ── */
-  @media (max-width: 700px) {
-    .kpis { grid-template-columns: repeat(2, 1fr); }
-    .pipeline-cols { grid-template-columns: 1fr; }
-    .pipeline-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+    padding: 20px;
+    font-size: 12px;
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="live-dot"></div>
+  <span class="live-dot"></span>
   <div class="logo">
-    <span class="rivian">RIVIAN</span>
+    <span class="rivian">Rivian</span>
     <span class="sep">×</span>
-    <span class="geotab">GEOTAB</span>
-    <span class="tag">OEM Connector Demo</span>
+    <span class="geotab">Geotab</span>
+    <span class="tag">OEM Connector • Enhanced</span>
   </div>
   <div class="header-meta">
-    <span id="vehicle-count">— vehicles</span>
-    <span id="sync-time">Syncing…</span>
+    <span id="vehicle-count">0 vehicles</span>
+    <span class="dig-status">DIG API • Prod-Ready</span>
   </div>
 </header>
 
-<div id="fault-banner">
-  <strong>⚠ Active Faults:</strong>
-  <span id="fault-list"></span>
-</div>
-
 <main>
-
-  <!-- KPIs -->
   <div class="kpis">
     <div class="kpi">
       <div class="kpi-label">Total Vehicles</div>
-      <div class="kpi-value green" id="kpi-total">—</div>
-      <div class="kpi-sub">Rivian fleet connected</div>
+      <div class="kpi-value green" id="kpi-total">0</div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Avg Battery</div>
-      <div class="kpi-value blue" id="kpi-battery">—</div>
-      <div class="kpi-sub">State of charge</div>
+      <div class="kpi-label">Lowest Battery</div>
+      <div class="kpi-value green" id="kpi-battery">—</div>
+      <div class="kpi-sub" id="kpi-battery-vin"></div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">Charging Now</div>
-      <div class="kpi-value yellow" id="kpi-charging">—</div>
-      <div class="kpi-sub">Vehicles on charge</div>
+      <div class="kpi-label">Charging</div>
+      <div class="kpi-value blue" id="kpi-charging">0</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Active Faults</div>
-      <div class="kpi-value red" id="kpi-faults">—</div>
-      <div class="kpi-sub">Require attention</div>
+      <div class="kpi-value danger" id="kpi-faults">0</div>
     </div>
   </div>
 
-  <!-- Vehicle cards -->
-  <div>
-    <div class="section-title">Fleet Vehicles</div>
-    <div class="vehicle-grid" id="vehicle-grid"></div>
-  </div>
-
-  <!-- Data pipeline panel -->
-  <div class="pipeline-panel">
-    <div class="pipeline-header">
-      <h3>Data Pipeline</h3>
-      <select id="vin-select" onchange="App.onSelectVin(this.value)">
-        <option value="">Select a vehicle…</option>
-      </select>
-      <div class="pipeline-arrow">
-        <span class="arrow-label rivian">Rivian API</span>
-        →
-        <span style="color:var(--muted);font-size:13px;">Connector</span>
-        →
-        <span class="arrow-label geotab">Geotab DIG</span>
+  <div class="section">
+    <div class="panel">
+      <div class="panel-header">⚠️ Fault Severity Scores (Dispatcher Priority)</div>
+      <div class="panel-body" id="fault-scores-list">
+        <div class="empty-state">No active faults</div>
       </div>
     </div>
-    <div id="pipeline-body">
-      <div class="pipeline-hint">Click a vehicle card or select a VIN above to see the data transformation</div>
+    <div class="panel">
+      <div class="panel-header">🔧 Maintenance Suggestions</div>
+      <div class="panel-body" id="maintenance-list">
+        <div class="empty-state">All vehicles healthy</div>
+      </div>
     </div>
   </div>
 
@@ -380,23 +323,20 @@
 <script>
 const App = {
   vehicles: [],
-  selectedVin: null,
-  REFRESH_MS: 3000,
+  apiBase: window.location.origin.startsWith('http') ? window.location.origin : 'http://127.0.0.1:8000',
 
   async init() {
-    await this.fetchFleet();
-    setInterval(() => this.fetchFleet(), this.REFRESH_MS);
+    setInterval(() => this.refresh(), 3000);
+    this.refresh();
   },
 
-  async fetchFleet() {
+  async refresh() {
     try {
-      const res = await fetch('/api/fleet');
+      const res = await fetch(`${this.apiBase}/api/fleet`);
       this.vehicles = await res.json();
       this.render();
-      document.getElementById('sync-time').textContent =
-        'Last sync: ' + new Date().toLocaleTimeString();
     } catch (e) {
-      document.getElementById('sync-time').textContent = 'Connection error';
+      console.error('Fleet fetch failed:', e);
     }
   },
 
@@ -405,136 +345,153 @@ const App = {
     document.getElementById('vehicle-count').textContent = v.length + ' vehicles';
 
     // KPIs
-    const avgBatt = v.length ? Math.round(v.reduce((s, x) => s + x.battery_percent, 0) / v.length) : 0;
     const charging = v.filter(x => x.charge_status === 'CHARGING').length;
-    const faulted  = v.filter(x => x.fault_codes.length > 0).length;
-    document.getElementById('kpi-total').textContent    = v.length;
-    document.getElementById('kpi-battery').textContent  = avgBatt + '%';
+    const faulted = v.reduce((sum, x) => sum + x.fault_codes.length, 0);
+    const lowV = v.length ? v.reduce((min, x) => x.battery_percent < min.battery_percent ? x : min, v[0]) : null;
+    const battEl = document.getElementById('kpi-battery');
+    battEl.textContent = lowV ? `${Math.round(lowV.battery_percent)}%` : '—';
+    battEl.className = 'kpi-value ' + (!lowV ? 'green' : lowV.battery_percent < 20 ? 'danger' : lowV.battery_percent < 30 ? 'warn' : 'green');
+    document.getElementById('kpi-battery-vin').textContent = lowV ? `...${lowV.vin.slice(-6)}` : '';
+    document.getElementById('kpi-total').textContent = v.length;
     document.getElementById('kpi-charging').textContent = charging;
-    document.getElementById('kpi-faults').textContent   = faulted;
+    document.getElementById('kpi-faults').textContent = faulted;
 
-    // Fault banner
-    const banner = document.getElementById('fault-banner');
-    const faultVehicles = v.filter(x => x.fault_codes.length > 0);
-    if (faultVehicles.length) {
-      banner.classList.add('visible');
-      document.getElementById('fault-list').textContent =
-        faultVehicles.map(x => `${x.name}: ${x.fault_names.join(', ')}`).join(' | ');
-    } else {
-      banner.classList.remove('visible');
-    }
-
-    // Vehicle grid
-    const grid = document.getElementById('vehicle-grid');
-    grid.innerHTML = v.map(vh => this.cardHTML(vh)).join('');
-
-    // VIN selector
-    const sel = document.getElementById('vin-select');
-    const current = sel.value;
-    const options = v.map(vh => `<option value="${vh.vin}">${vh.name}</option>`).join('');
-    sel.innerHTML = '<option value="">Select a vehicle…</option>' + options;
-    if (current) sel.value = current;
-
-    // Refresh pipeline if vehicle selected
-    if (this.selectedVin) {
-      this.loadPipeline(this.selectedVin);
-    }
+    this.loadFaultScores();
+    this.loadMaintenance();
   },
 
-  cardHTML(v) {
-    const batt = v.battery_percent;
-    const battColor = batt > 50 ? '#00a651' : batt > 20 ? '#f59e0b' : '#ef4444';
-    const hasFault = v.fault_codes.length > 0;
-    const isSelected = v.vin === this.selectedVin;
-    const classes = ['vehicle-card', isSelected ? 'selected' : '', hasFault ? 'has-fault' : ''].filter(Boolean).join(' ');
-
-    let statusBadge;
-    if (hasFault) {
-      statusBadge = `<span class="status-badge badge-fault"><span class="badge-dot"></span>FAULT</span>`;
-    } else if (v.charge_status === 'CHARGING') {
-      statusBadge = `<span class="status-badge badge-charging"><span class="badge-dot"></span>Charging</span>`;
-    } else if (v.speed_mph > 2) {
-      statusBadge = `<span class="status-badge badge-driving"><span class="badge-dot"></span>Driving ${Math.round(v.speed_mph)} mph</span>`;
-    } else {
-      statusBadge = `<span class="status-badge badge-parked"><span class="badge-dot"></span>Parked</span>`;
-    }
-
-    return `
-      <div class="${classes}" onclick="App.onSelectVin('${v.vin}')">
-        <div class="card-name">${v.name}</div>
-        <div class="card-type">${v.device_type} · ${v.vin.slice(-8)}</div>
-        <div class="batt-row">
-          <div class="batt-pct" style="color:${battColor}">${batt}%</div>
-          <div class="batt-bar-wrap">
-            <div class="batt-bar" style="width:${batt}%;background:${battColor}"></div>
-          </div>
-        </div>
-        <div class="card-stats">
-          <div class="stat">
-            <div class="stat-label">Range</div>
-            <div class="stat-value">${v.estimated_range_miles} mi</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Location</div>
-            <div class="stat-value">${v.latitude.toFixed(3)}, ${v.longitude.toFixed(3)}</div>
-          </div>
-        </div>
-        ${statusBadge}
-      </div>`;
-  },
-
-  onSelectVin(vin) {
-    if (!vin) return;
-    this.selectedVin = vin;
-    document.getElementById('vin-select').value = vin;
-    // Re-render cards to update selected state
-    const grid = document.getElementById('vehicle-grid');
-    grid.innerHTML = this.vehicles.map(v => this.cardHTML(v)).join('');
-    this.loadPipeline(vin);
-  },
-
-  async loadPipeline(vin) {
+  async loadFaultScores() {
     try {
-      const [rawRes, normRes] = await Promise.all([
-        fetch(`/api/vehicle/${vin}/raw`),
-        fetch(`/api/vehicle/${vin}/normalized`),
-      ]);
-      const rawData  = await rawRes.json();
-      const normData = await normRes.json();
-      this.renderPipeline(rawData, normData);
+      const res = await fetch(`${this.apiBase}/api/fleet/faults/scores`);
+      const scores = await res.json();
+      
+      let html = '';
+      for (const [vin, data] of Object.entries(scores)) {
+        for (const score of data.scores) {
+          const levelClass = `severity-${score.severity_level.toLowerCase()}`;
+          const badgeClass = `badge-${score.severity_level.toLowerCase()}`;
+          html += `
+            <div class="fault-score-item ${levelClass}" data-vin="${vin}" onclick="App.showMaintenanceForVin('${vin}', '${data.device_name}', '${score.rivian_fault_code}')">
+              <div class="fault-score-header">
+                <span class="fault-score-name">${score.fault_name}</span>
+                <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+                  <span class="fault-score-badge ${badgeClass}">${score.severity_level}</span>
+                  <button class="fault-dismiss-btn" onclick="event.stopPropagation(); App.dismissFault('${vin}', '${score.rivian_fault_code}')">✕ Dismiss</button>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--geotab);margin:2px 0">${data.device_name}</div>
+              <div class="fault-score-score">Score: ${score.severity_score}/100 • ${score.recommendation}</div>
+            </div>`;
+        }
+      }
+      document.getElementById('fault-scores-list').innerHTML = html || '<div class="empty-state">No active faults</div>';
     } catch (e) {
-      document.getElementById('pipeline-body').innerHTML =
-        '<div class="pipeline-hint">Error loading data</div>';
+      console.error('Fault scores fetch failed:', e);
     }
   },
 
-  renderPipeline(raw, norm) {
-    document.getElementById('pipeline-body').innerHTML = `
-      <div class="pipeline-cols">
-        <div class="pipeline-col">
-          <div class="col-title rivian">Raw — Rivian API format</div>
-          <pre class="json-view">${this.highlight(JSON.stringify(raw, null, 2))}</pre>
-        </div>
-        <div class="pipeline-col">
-          <div class="col-title geotab">Normalized — Geotab standard models</div>
-          <pre class="json-view">${this.highlight(JSON.stringify(norm, null, 2))}</pre>
-        </div>
-      </div>`;
+  async showMaintenanceForVin(vin, deviceName, faultCode) {
+    document.querySelectorAll('.fault-score-item').forEach(el => {
+      el.classList.toggle('selected', el.dataset.vin === vin);
+    });
+
+    const list = document.getElementById('maintenance-list');
+    list.innerHTML = '<div class="empty-state">Loading...</div>';
+
+    let bar = document.querySelector('.maintenance-context-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'maintenance-context-bar';
+      list.before(bar);
+    }
+    bar.innerHTML = `Showing: <strong>${deviceName}</strong> &nbsp;<button onclick="App.clearMaintenanceFocus()">Show All</button>`;
+
+    try {
+      const url = faultCode
+        ? `${this.apiBase}/api/vehicle/${vin}/maintenance?fault_code=${encodeURIComponent(faultCode)}`
+        : `${this.apiBase}/api/vehicle/${vin}/maintenance`;
+      const res = await fetch(url);
+      if (!res.ok) { list.innerHTML = '<div class="empty-state">No data</div>'; return; }
+      const sug = await res.json();
+      if (!sug || !sug.suggestion_type) {
+        list.innerHTML = '<div class="empty-state">No maintenance needed</div>';
+        return;
+      }
+      const u = sug.urgency || 'low';
+      list.innerHTML = `
+        <div class="maintenance-suggestion maintenance-${u}">
+          <div class="maintenance-title-${u}">${sug.suggestion_type.replace(/_/g, ' ').toUpperCase()}</div>
+          <div class="maintenance-detail">Vehicle: ${sug.vin}</div>
+          <div class="maintenance-detail">Urgency: <strong>${sug.urgency}</strong></div>
+          <div class="maintenance-detail">Downtime: ~${sug.estimated_downtime_hours}h</div>
+          <div class="maintenance-detail">Reason: ${sug.reason}</div>
+          <div class="maintenance-parts">Parts: ${sug.parts_likely_needed.join(', ')}</div>
+        </div>`;
+    } catch (e) {
+      list.innerHTML = '<div class="empty-state">Error loading suggestion</div>';
+    }
   },
 
-  highlight(json) {
-    return json
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+\.?\d*([eE][+-]?\d+)?)/g, match => {
-        if (/^"/.test(match)) {
-          if (/:$/.test(match)) return `<span class="json-key">${match}</span>`;
-          return `<span class="json-str">${match}</span>`;
-        }
-        if (/true|false/.test(match)) return `<span class="json-bool">${match}</span>`;
-        if (/null/.test(match))       return `<span class="json-null">${match}</span>`;
-        return `<span class="json-num">${match}</span>`;
-      });
+  clearMaintenanceFocus() {
+    document.querySelectorAll('.fault-score-item').forEach(el => el.classList.remove('selected'));
+    const bar = document.querySelector('.maintenance-context-bar');
+    if (bar) bar.remove();
+    this.loadMaintenance();
   },
+
+  async dismissFault(vin, faultCode) {
+    try {
+      const res = await fetch(`${this.apiBase}/api/vehicle/${vin}/faults/${faultCode}`, { method: 'DELETE' });
+      if (res.ok) {
+        // If this vehicle's fault was focused, clear the focus
+        const bar = document.querySelector('.maintenance-context-bar');
+        if (bar) {
+          const focused = document.querySelector('.fault-score-item.selected');
+          if (focused && focused.dataset.vin === vin) this.clearMaintenanceFocus();
+        }
+        await this.loadFaultScores();
+        await this.loadMaintenance();
+      }
+    } catch (e) {
+      console.error('Dismiss fault failed:', e);
+    }
+  },
+
+  async loadMaintenance() {
+    if (document.querySelector('.maintenance-context-bar')) return;
+    try {
+      const vins = this.vehicles.map(v => v.vin);
+      const suggestions = [];
+      
+      for (const vin of vins) {
+        const res = await fetch(`${this.apiBase}/api/vehicle/${vin}/maintenance`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.suggestion_type) {
+            suggestions.push(data);
+          }
+        }
+      }
+      
+      let html = '';
+      for (const sug of suggestions) {
+        const u = sug.urgency || 'low';
+        html += `
+          <div class="maintenance-suggestion maintenance-${u}">
+            <div class="maintenance-title-${u}">${sug.suggestion_type.replace(/_/g, ' ').toUpperCase()}</div>
+            <div class="maintenance-detail">Vehicle: ${sug.vin}</div>
+            <div class="maintenance-detail">Urgency: <strong>${sug.urgency}</strong></div>
+            <div class="maintenance-detail">Downtime: ~${sug.estimated_downtime_hours}h</div>
+            <div class="maintenance-detail">Reason: ${sug.reason}</div>
+            <div class="maintenance-parts">Parts: ${sug.parts_likely_needed.join(', ')}</div>
+          </div>`;
+      }
+      document.getElementById('maintenance-list').innerHTML = html || '<div class="empty-state">All vehicles healthy</div>';
+    } catch (e) {
+      console.error('Maintenance fetch failed:', e);
+    }
+  },
+
 };
 
 App.init();

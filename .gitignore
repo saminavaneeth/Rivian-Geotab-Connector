@@ -3,3 +3,4 @@ __pycache__/
 *.pyo
 server.log
 .env
+fault_state.json
