@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rivian × Geotab OEM Connector</title>
+<style>
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --surface2:  #22263a;
+    --border:    #2e3350;
+    --rivian:    #00a651;
+    --geotab:    #0073e6;
+    --warn:      #f59e0b;
+    --danger:    #ef4444;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --radius:    10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .logo .rivian  { color: var(--rivian); }
+  .logo .sep     { color: var(--muted); margin: 0 4px; }
+  .logo .geotab  { color: var(--geotab); }
+  .logo .tag     { font-size: 11px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--rivian);
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(0,166,81,.4); }
+    50% { opacity: .7; transform: scale(1.1); box-shadow: 0 0 0 5px rgba(0,166,81,0); }
+  }
+
+  .header-meta { margin-left: auto; color: var(--muted); font-size: 12px; }
+  .header-meta span { margin-left: 16px; }
+
+  /* ── Fault banner ── */
+  #fault-banner {
+    display: none;
+    background: rgba(239,68,68,.12);
+    border-bottom: 1px solid rgba(239,68,68,.3);
+    padding: 10px 24px;
+    font-size: 13px;
+    color: #fca5a5;
+    gap: 8px;
+    align-items: center;
+  }
+
+  #fault-banner.visible { display: flex; }
+  #fault-banner strong { color: var(--danger); }
+
+  /* ── Main layout ── */
+  main { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── KPI cards ── */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-value.green  { color: var(--rivian); }
+  .kpi-value.blue   { color: var(--geotab); }
+  .kpi-value.yellow { color: var(--warn); }
+  .kpi-value.red    { color: var(--danger); }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Vehicle grid ── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .vehicle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+  }
+
+  .vehicle-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vehicle-card:hover { border-color: var(--geotab); background: var(--surface2); }
+  .vehicle-card.selected { border-color: var(--geotab); background: var(--surface2); }
+  .vehicle-card.selected::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--geotab);
+  }
+
+  .vehicle-card.has-fault { border-color: rgba(239,68,68,.5); }
+  .vehicle-card.has-fault::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--danger);
+    animation: fault-blink 1s infinite;
+  }
+
+  @keyframes fault-blink {
+    0%, 100% { opacity: 1; } 50% { opacity: .2; }
+  }
+
+  .card-name { font-weight: 600; font-size: 13px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-type { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+
+  /* Battery bar */
+  .batt-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .batt-pct { font-size: 18px; font-weight: 700; width: 44px; flex-shrink: 0; }
+  .batt-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .batt-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .6s ease;
+  }
+
+  .card-stats { display: flex; gap: 10px; margin-top: 10px; }
+  .stat { flex: 1; }
+  .stat-label { font-size: 10px; color: var(--muted); }
+  .stat-value { font-size: 13px; font-weight: 600; }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-top: 10px;
+  }
+
+  .badge-driving  { background: rgba(0,166,81,.15);  color: var(--rivian); }
+  .badge-charging { background: rgba(0,115,230,.15); color: var(--geotab); }
+  .badge-parked   { background: rgba(100,116,139,.15); color: var(--muted); }
+  .badge-fault    { background: rgba(239,68,68,.15); color: var(--danger); animation: fault-blink 1s infinite; }
+
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ── Data pipeline panel ── */
+  .pipeline-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .pipeline-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .pipeline-header h3 { font-size: 13px; font-weight: 600; }
+
+  .pipeline-header select {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .pipeline-arrow {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .arrow-label {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .arrow-label.rivian { background: rgba(0,166,81,.15); color: var(--rivian); }
+  .arrow-label.geotab { background: rgba(0,115,230,.15); color: var(--geotab); }
+
+  .pipeline-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pipeline-col {
+    padding: 16px 20px;
+  }
+
+  .pipeline-col:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  .col-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 10px;
+  }
+
+  .col-title.rivian { color: var(--rivian); }
+  .col-title.geotab { color: var(--geotab); }
+
+  pre.json-view {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    font-size: 12px;
+    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+    line-height: 1.6;
+    overflow: auto;
+    max-height: 340px;
+    white-space: pre;
+  }
+
+  .json-key    { color: #7dd3fc; }
+  .json-str    { color: #86efac; }
+  .json-num    { color: #fbbf24; }
+  .json-bool   { color: #c084fc; }
+  .json-null   { color: var(--muted); }
+  .json-brace  { color: var(--muted); }
+
+  .pipeline-hint {
+    padding: 40px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .pipeline-cols { grid-template-columns: 1fr; }
+    .pipeline-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="live-dot"></div>
+  <div class="logo">
+    <span class="rivian">RIVIAN</span>
+    <span class="sep">×</span>
+    <span class="geotab">GEOTAB</span>
+    <span class="tag">OEM Connector Demo</span>
+  </div>
+  <div class="header-meta">
+    <span id="vehicle-count">— vehicles</span>
+    <span id="sync-time">Syncing…</span>
+  </div>
+</header>
+
+<div id="fault-banner">
+  <strong>⚠ Active Faults:</strong>
+  <span id="fault-list"></span>
+</div>
+
+<main>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">Total Vehicles</div>
+      <div class="kpi-value green" id="kpi-total">—</div>
+      <div class="kpi-sub">Rivian fleet connected</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Battery</div>
+      <div class="kpi-value blue" id="kpi-battery">—</div>
+      <div class="kpi-sub">State of charge</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Charging Now</div>
+      <div class="kpi-value yellow" id="kpi-charging">—</div>
+      <div class="kpi-sub">Vehicles on charge</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Active Faults</div>
+      <div class="kpi-value red" id="kpi-faults">—</div>
+      <div class="kpi-sub">Require attention</div>
+    </div>
+  </div>
+
+  <!-- Vehicle cards -->
+  <div>
+    <div class="section-title">Fleet Vehicles</div>
+    <div class="vehicle-grid" id="vehicle-grid"></div>
+  </div>
+
+  <!-- Data pipeline panel -->
+  <div class="pipeline-panel">
+    <div class="pipeline-header">
+      <h3>Data Pipeline</h3>
+      <select id="vin-select" onchange="App.onSelectVin(this.value)">
+        <option value="">Select a vehicle…</option>
+      </select>
+      <div class="pipeline-arrow">
+        <span class="arrow-label rivian">Rivian API</span>
+        →
+        <span style="color:var(--muted);font-size:13px;">Connector</span>
+        →
+        <span class="arrow-label geotab">Geotab DIG</span>
+      </div>
+    </div>
+    <div id="pipeline-body">
+      <div class="pipeline-hint">Click a vehicle card or select a VIN above to see the data transformation</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const App = {
+  vehicles: [],
+  selectedVin: null,
+  REFRESH_MS: 3000,
+
+  async init() {
+    await this.fetchFleet();
+    setInterval(() => this.fetchFleet(), this.REFRESH_MS);
+  },
+
+  async fetchFleet() {
+    try {
+      const res = await fetch('/api/fleet');
+      this.vehicles = await res.json();
+      this.render();
+      document.getElementById('sync-time').textContent =
+        'Last sync: ' + new Date().toLocaleTimeString();
+    } catch (e) {
+      document.getElementById('sync-time').textContent = 'Connection error';
+    }
+  },
+
+  render() {
+    const v = this.vehicles;
+    document.getElementById('vehicle-count').textContent = v.length + ' vehicles';
+
+    // KPIs
+    const avgBatt = v.length ? Math.round(v.reduce((s, x) => s + x.battery_percent, 0) / v.length) : 0;
+    const charging = v.filter(x => x.charge_status === 'CHARGING').length;
+    const faulted  = v.filter(x => x.fault_codes.length > 0).length;
+    document.getElementById('kpi-total').textContent    = v.length;
+    document.getElementById('kpi-battery').textContent  = avgBatt + '%';
+    document.getElementById('kpi-charging').textContent = charging;
+    document.getElementById('kpi-faults').textContent   = faulted;
+
+    // Fault banner
+    const banner = document.getElementById('fault-banner');
+    const faultVehicles = v.filter(x => x.fault_codes.length > 0);
+    if (faultVehicles.length) {
+      banner.classList.add('visible');
+      document.getElementById('fault-list').textContent =
+        faultVehicles.map(x => `${x.name}: ${x.fault_names.join(', ')}`).join(' | ');
+    } else {
+      banner.classList.remove('visible');
+    }
+
+    // Vehicle grid
+    const grid = document.getElementById('vehicle-grid');
+    grid.innerHTML = v.map(vh => this.cardHTML(vh)).join('');
+
+    // VIN selector
+    const sel = document.getElementById('vin-select');
+    const current = sel.value;
+    const options = v.map(vh => `<option value="${vh.vin}">${vh.name}</option>`).join('');
+    sel.innerHTML = '<option value="">Select a vehicle…</option>' + options;
+    if (current) sel.value = current;
+
+    // Refresh pipeline if vehicle selected
+    if (this.selectedVin) {
+      this.loadPipeline(this.selectedVin);
+    }
+  },
+
+  cardHTML(v) {
+    const batt = v.battery_percent;
+    const battColor = batt > 50 ? '#00a651' : batt > 20 ? '#f59e0b' : '#ef4444';
+    const hasFault = v.fault_codes.length > 0;
+    const isSelected = v.vin === this.selectedVin;
+    const classes = ['vehicle-card', isSelected ? 'selected' : '', hasFault ? 'has-fault' : ''].filter(Boolean).join(' ');
+
+    let statusBadge;
+    if (hasFault) {
+      statusBadge = `<span class="status-badge badge-fault"><span class="badge-dot"></span>FAULT</span>`;
+    } else if (v.charge_status === 'CHARGING') {
+      statusBadge = `<span class="status-badge badge-charging"><span class="badge-dot"></span>Charging</span>`;
+    } else if (v.speed_mph > 2) {
+      statusBadge = `<span class="status-badge badge-driving"><span class="badge-dot"></span>Driving ${Math.round(v.speed_mph)} mph</span>`;
+    } else {
+      statusBadge = `<span class="status-badge badge-parked"><span class="badge-dot"></span>Parked</span>`;
+    }
+
+    return `
+      <div class="${classes}" onclick="App.onSelectVin('${v.vin}')">
+        <div class="card-name">${v.name}</div>
+        <div class="card-type">${v.device_type} · ${v.vin.slice(-8)}</div>
+        <div class="batt-row">
+          <div class="batt-pct" style="color:${battColor}">${batt}%</div>
+          <div class="batt-bar-wrap">
+            <div class="batt-bar" style="width:${batt}%;background:${battColor}"></div>
+          </div>
+        </div>
+        <div class="card-stats">
+          <div class="stat">
+            <div class="stat-label">Range</div>
+            <div class="stat-value">${v.estimated_range_miles} mi</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Location</div>
+            <div class="stat-value">${v.latitude.toFixed(3)}, ${v.longitude.toFixed(3)}</div>
+          </div>
+        </div>
+        ${statusBadge}
+      </div>`;
+  },
+
+  onSelectVin(vin) {
+    if (!vin) return;
+    this.selectedVin = vin;
+    document.getElementById('vin-select').value = vin;
+    // Re-render cards to update selected state
+    const grid = document.getElementById('vehicle-grid');
+    grid.innerHTML = this.vehicles.map(v => this.cardHTML(v)).join('');
+    this.loadPipeline(vin);
+  },
+
+  async loadPipeline(vin) {
+    try {
+      const [rawRes, normRes] = await Promise.all([
+        fetch(`/api/vehicle/${vin}/raw`),
+        fetch(`/api/vehicle/${vin}/normalized`),
+      ]);
+      const rawData  = await rawRes.json();
+      const normData = await normRes.json();
+      this.renderPipeline(rawData, normData);
+    } catch (e) {
+      document.getElementById('pipeline-body').innerHTML =
+        '<div class="pipeline-hint">Error loading data</div>';
+    }
+  },
+
+  renderPipeline(raw, norm) {
+    document.getElementById('pipeline-body').innerHTML = `
+      <div class="pipeline-cols">
+        <div class="pipeline-col">
+          <div class="col-title rivian">Raw — Rivian API format</div>
+          <pre class="json-view">${this.highlight(JSON.stringify(raw, null, 2))}</pre>
+        </div>
+        <div class="pipeline-col">
+          <div class="col-title geotab">Normalized — Geotab standard models</div>
+          <pre class="json-view">${this.highlight(JSON.stringify(norm, null, 2))}</pre>
+        </div>
+      </div>`;
+  },
+
+  highlight(json) {
+    return json
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+\.?\d*([eE][+-]?\d+)?)/g, match => {
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) return `<span class="json-key">${match}</span>`;
+          return `<span class="json-str">${match}</span>`;
+        }
+        if (/true|false/.test(match)) return `<span class="json-bool">${match}</span>`;
+        if (/null/.test(match))       return `<span class="json-null">${match}</span>`;
+        return `<span class="json-num">${match}</span>`;
+      });
+  },
+};
+
+App.init();
+</script>
+</body>
+</html>
